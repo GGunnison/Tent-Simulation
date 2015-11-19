@@ -21,9 +21,7 @@ function [Tx, qsol, time] = ReadWeather(file, n, t, plt)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if nargin < 4
-    plt=1;
-end
+
 
 %  Read in data from file
 M = csvread(file,32,0);

@@ -38,12 +38,13 @@ Tll = (20+273.15)*ones(I,Z);    %  Lower temperature limit of tent z    (K)
 Tul = (25+273.15)*ones(I,Z);    %  Upper temperature limit of tent z    (K)
 T_o = (22+273.15)*ones(1,Z);    %  Initial temperature of tent z        (K)
 rho_temp = 0.5*Pg(1);           %  Penalty for temperature violation    (W/K);
-weafil = 'June2014weatherdata.txt';
-weadir = '/Users/lindahl/Documents/Research/Projects/Devens Temperature Experiment/Forward Simulation/Version 1.2/';
 
+weafil = 'June2014weatherdata.txt';
+% weadir = '/Users/lindahl/Documents/Research/Projects/Devens Temperature Experiment/Forward Simulation/Version 1.2/';
+weadir = '/Users/GrantGunnison/Dropbox/6.UAR/Tent Simulation/';
 %  Exogenous data
-plt = 1;
-[Tx, qsol] = ReadWeather([weadir weafil], n, t, plt);
+plt = 0;
+[Tx, qsol] = ReadWeather([weadir weafil], n, 2*60, plt);
 Tx = ((Tx-32)*5/9 + 273.15)-15; % (Convert F to C) and adjust so need heating
 qint    = 1000*ones(I,Z);
 qload   = zeros(I,Z);
@@ -131,7 +132,7 @@ for z = 1:Z
     Tll_opt = [Tll_opt; Tll(:,z)];
     Tul_opt = [Tul_opt; Tul(:,z)];
 end
-cvx_solver mosek
+cvx_solver gurobi
 cvx_begin quiet
     variable x_var(Z*I);
     variable x_var_bin(Z*I + G*I) binary;
@@ -169,31 +170,31 @@ for g = 1:G
         ug(i,g) = x_var_bin(Z*I+a);
     end
 end
-
+uz
 %  Plot
-% figure(1)
-% ug_total = sum(ug,2);
-% display(sprintf('The Max number of generators required is %i.\n', int16(max(ug_total))));
-% plot(time, ug_total, '-ok', 'markersize', 2);
-% ylim([0 int16(max(ug_total))+1]);
-% set(gca, 'ytick', [0:1:int16(max(ug_total))+1]);
-% ylabel('Number of Generators');
-% xlabel('Time (min)');
-% Figure_properties({1}, 3, 2.5);
-% Figure_print(1, 'jpeg', 3,2.5,300, 'Number of Generators');
-% 
-% figure(2)
-% hold on;
-% plot(repmat(time,1,Z), T-273.15, '-o', 'markersize', 2);
+figure(1)
+ug_total = sum(ug,2);
+display(sprintf('The Max number of generators required is %i.\n', int16(max(ug_total))));
+plot(time, ug_total, '-ok', 'markersize', 2);
+ylim([0 int16(max(ug_total))+1]);
+set(gca, 'ytick', [0:1:int16(max(ug_total))+1]);
+ylabel('Number of Generators');
+xlabel('Time (min)');
+Figure_properties({1}, 3, 2.5);
+Figure_print(1, 'jpeg', 3,2.5,300, 'Number of Generators');
+
+figure(2)
+hold on;
+plot(repmat(time,1,Z), T-273.15, '-o', 'markersize', 2);
 for z = 1:Z
     plot(time, Tul(:,z)-273.15, ':k');
     plot(time, Tll(:,z)-273.15, ':k');
 end
-% plot(time, Tx - 273.15, '-ok', 'markersize', 2);
-% ylabel('Temperature (^oC)');
-% xlabel('Time (min)');
-% Figure_properties({2}, 3, 2.5);
-% Figure_print(2, 'jpeg', 3,2.5,300, 'Tent Temperature');
+plot(time, Tx - 273.15, '-ok', 'markersize', 2);
+ylabel('Temperature (^oC)');
+xlabel('Time (min)');
+Figure_properties({2}, 3, 2.5);
+Figure_print(2, 'jpeg', 3,2.5,300, 'Tent Temperature');
 
 figure(3)
 hold on;
