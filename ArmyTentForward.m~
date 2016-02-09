@@ -57,12 +57,12 @@ raw = csvread(weafil,32,0);
 % simulation
 st = raw(1,1)*10^-6; % in seconds
 time = raw(:,1)*10^-6-st; % in seconds
-Tx = ((raw(:,2)-32)*5/9)-10; % (Convert F to C and subtract 15 just for demonstration of colder weather)
+Tx = ((raw(:,2)-32)*5/9)-15+273.15; % (Convert F to K and subtract 15 just for demonstration of colder weather)
 sol = raw(:,3); % solar irradiation in W/m^2
 
 % plot weather if desired
 %figure;
-%plot(time/60,Tx)
+plot(time/60,Tx)
 %% Set Parameters
 % Parameters (pulled these from David's code, not all used currently)
 Z = 3;                          %  Number of tents (1 heater per tent)      (-)
@@ -72,13 +72,13 @@ ns = time(end) - n - time(1);   %  Length of simulation                     (s)
 tp = 10*60;                     %  Time interval of planning horizon        (s)
 I = n/tp+1;                     %  MILP time intervals                      (-)
 tu = 20*60;                     %  MILP update time intervals               (s)
-Ms = ceil(ns/tu+1);             %  Number of MILP updates                   (-)
+Ms = ceil(ns/tu+1);                   %  Number of MILP updates                   (-)
 
 Qz = 10.0e3;                    %  Nominal Heating output of heater z       (W)
 Qlz = 1000;                     %  Nominal internal loads in each tent      (W)
 etaz = 1;                       %  Nom. Power-Heat efficiency of heater z   (Wth/We)
 Pg = 60.0e3;                    %  Nominal Power output of generator g      (W)
-Fg = 5.37/3600;                 %  Nom. Fuel consumption of generator g     (Gal/s) http://www.marcorsyscom.marines.mil/Portals/105/pdmeps/docs/MEP/B1016B1021.pdf
+Fg = 1;                         %  Nom. Fuel consumption of generator g     (Gal/s)
 Rz = 0.00182;                   %  Nominal Resistance value of tent z       (K/W)
 Cz = 1.47e6;                    %  NominalCapacitance value of tent z       (J/K)
 kz = 2.38;                      %  Nominal Solar absorptance coefficient z  (m^2)
@@ -92,11 +92,11 @@ plt = 1;                        %  Plot graphs of the results.
 % Set parameters list for MILP optimization
 par = [Z, G, st, n, tp, I, Qz, Efan, etaz, Pg, Fg, Rz, Cz, kz, rho_temp];
 
-%% Load tent-load profiles
+%% Create tent load profiles
 
 q_int = Qlz*ones(length(time),Z);    % Load internal load profile (for now just set to constant amount)
 
-%% Load tent-temperature constraint profiles
+%% Create tent temperature constraint profiles
 
 constraints = [Tll*ones(size(time)), Tul*ones(size(time))];
 constraints = repmat(constraints,1,Z);
@@ -134,7 +134,7 @@ x = x0;  % Set initial state of tents
 m = 1;      % Set counter for storing data to 1
 mm = 0;     % Set subcounter for MILP update to 0
 tl = -Inf;     % Initiate last time of MILP update.  Hasn't happened so set to -Inf 
-while time(m)<ns
+while time(m)<100000
     
     % uncomment to display time during simulation
     display([num2str(time(m)/60),' mins']);
@@ -149,15 +149,14 @@ while time(m)<ns
         tl = (mm-1)*tu;
         
         % Get weather forecast data (don't plot, 0 for last argument)
-        [TxF, qsolF,timecheck] = ReadWeather(weafil, time(m)+st, n, tp, 0); % weather data
-        TxF = ((TxF-32)*5/9) -10; % (Convert F to C and subtract 15 just for demonstration of colder weather)
+        [TxF, qsolF] = ReadWeather(weafil, time(m)+st, n, tp, 0); % weather data
+        TxF = ((TxF-32)*5/9) -15+273.15; % (Convert F to C and subtract 15 just for demonstration of colder weather)
         forecast = [TxF, qsolF]; % Combine forecast data
-        forecast = forecast(1:I,:); % Remove extra row if one is there 
         
         % Get tent-load forecast data and constraint profiles
         q_intF = [];
         constF = [];
-        for xx = 0:(length(forecast)-1)
+        for xx = 0:(length(TxF)-1)
             [~,bb] = min(abs(time - (time(m)+xx*tp)));
             q_intF = [q_intF; q_int(bb,:)]; % tent-load forecast
             constF = [constF; constraints(bb,:)]; % constraint profile

@@ -47,9 +47,6 @@ while M(i,1) <= n+t         % loop goes through time from current until horizon 
         M_step = [M_step; M(i,:)]; % append weather data to M_step matrix
     else % if time is not less than time step
         if isempty(M_step)
-%             Tx(j,1) = [];
-%             qsol(j,1) = [];
-%             time(j,1) = [];
             Tx(j,1) = Tx(j-1,1);
             qsol(j,1) = qsol(j-1,1);
             time(j,1) = time(j-1,1);
