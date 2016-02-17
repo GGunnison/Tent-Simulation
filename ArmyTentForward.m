@@ -39,13 +39,13 @@
 clear;
 close all;
 
-% select cvx solver
-cvx_solver mosek
+% % select cvx solver
+% cvx_solver mosek
 
 % set weather data files to use for simulation
 weafil = 'June2014weatherdata.txt';
-% weadir = '/Users/GrantGunnison/Dropbox/6.UAR/Tent Simulation/';
-weadir = '/Users/lindahl/Documents/Research/Projects/Devens Temperature Experiment/Forward Simulation/Version 2.0/';
+weadir = '/Users/GrantGunnison/Dropbox/Research/Tent Simulation';
+% weadir = '/Users/lindahl/Documents/Research/Projects/Devens Temperature Experiment/Forward Simulation/Version 2.0/';
 
 cd(weadir);
 
@@ -94,7 +94,12 @@ par = [Z, G, st, n, tp, I, Qz, Efan, etaz, Pg, Fg, Rz, Cz, kz, rho_temp];
 
 %% Load tent-load profiles
 
-q_int = Qlz*ones(length(time),Z);    % Load internal load profile (for now just set to constant amount)
+tents = [0, 2, 1];       % Variable describes of each type of tent in ["sleep", "kitchen", "headquarters"] order
+
+q_int = load_profile(st, length(time), Z, tents);
+% disp(q_int)
+
+% q_int = Qlz*ones(length(time),Z);    % Load internal load profile (for now just set to constant amount)
 
 %% Load tent-temperature constraint profiles
 
@@ -134,7 +139,7 @@ x = x0;  % Set initial state of tents
 m = 1;      % Set counter for storing data to 1
 mm = 0;     % Set subcounter for MILP update to 0
 tl = -Inf;     % Initiate last time of MILP update.  Hasn't happened so set to -Inf 
-while time(m)<ns
+while time(m)<100000
     
     % uncomment to display time during simulation
     display([num2str(time(m)/60),' mins']);
